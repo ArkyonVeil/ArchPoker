@@ -186,7 +186,7 @@ public class CardCreator : MonoBehaviour
         }
     }
 
-    public string GetTextOfCardValue(CardValue cardValue)
+    public string GetCharOfCardValue(CardValue cardValue)
     {
         switch (cardValue)
         {
@@ -216,6 +216,42 @@ public class CardCreator : MonoBehaviour
                 return "K";
             case CardValue.Ace:
                 return "A";
+            default:
+                break;
+        }
+        return "Oops";
+    }
+
+    public string GetTextOfCardValue(CardValue cardValue)
+    {
+        switch (cardValue)
+        {
+            case CardValue.Two:
+                return "Two";
+            case CardValue.Three:
+                return "Three";
+            case CardValue.Four:
+                return "Four";
+            case CardValue.Five:
+                return "Five";
+            case CardValue.Six:
+                return "Six";
+            case CardValue.Seven:
+                return "Seven";
+            case CardValue.Eight:
+                return "Eight";
+            case CardValue.Nine:
+                return "Nine";
+            case CardValue.Ten:
+                return "Ten";
+            case CardValue.Jack:
+                return "Jack";
+            case CardValue.Queen:
+                return "Queen";
+            case CardValue.King:
+                return "King";
+            case CardValue.Ace:
+                return "Ace";
             default:
                 break;
         }

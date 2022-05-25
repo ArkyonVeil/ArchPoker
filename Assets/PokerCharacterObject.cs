@@ -227,7 +227,15 @@ public class PokerCharacterObject : MonoBehaviour
         List<CardObject> cards = new List<CardObject>();
         cards.AddRange(hand.cards);
         cards.AddRange(GameManager.I.communityHand.cards);
-        cards.OrderBy(x => x.cardValue);
+        cards = cards.OrderBy(x => x.cardType).ThenBy(x => x.cardValueType).ToList();
+
+        //Debug
+        Debug.Log(CharacterName + "'s Hand: ");
+        for (int i = 0; i < cards.Count; i++)
+        {
+            Debug.Log(cards[i].CardName);
+        }
+        Debug.Log("----------------");
 
         //Highcard
         HandTier = 1;
@@ -353,7 +361,7 @@ public class PokerCharacterObject : MonoBehaviour
         List<CardObject> cards = new List<CardObject>();
         cards.AddRange(hand.cards);
         cards.AddRange(GameManager.I.communityHand.cards);
-        cards.OrderBy(x => x.cardValue);
+        cards = cards.OrderBy(x => x.cardValue).ToList();
 
         float handValue = 0;
 

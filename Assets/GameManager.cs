@@ -35,6 +35,7 @@ public class GameManager : MonoBehaviour
 
     bool isGameLive = false;
     int endgamePhase = -1;
+    int endingBeatDelay = 50;
 
     public enum GameProgress
     {
@@ -297,7 +298,7 @@ public class GameManager : MonoBehaviour
             Players[i].GetHandFinalValue();
             pRank[i] = new PlayerRank() { playerIndex = i, handTier = Players[i].HandTier, KickerValue = Players[i].KickerValue };
         }       
-        pRank.OrderBy(x => x.handTier);
+        pRank = pRank.OrderByDescending(x => x.handTier).ToArray();
         Debug.Log("Victory table: ");
         for (int i = 0; i < pRank.Length; i++)
         {
@@ -306,6 +307,8 @@ public class GameManager : MonoBehaviour
         //Yay that person wins.
         TransferMoney(false, moneyInPot, Players[pRank[0].playerIndex]);
         endgamePhase = 0;
+        secondsTimeWait = 3;
+ 
     }
 
     void RoundEndPhase(int phase)

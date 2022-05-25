@@ -35,6 +35,7 @@ public class CardObject : MonoBehaviour
     float speed;
 
     CardSetData cardSet;
+    public string CardName { get{ return CardCreator.I.GetTextOfCardValue(cardValueType) + " of " + cardType; } }
 
     public void Start()
     {
@@ -49,7 +50,7 @@ public class CardObject : MonoBehaviour
         cardValueType = cValue;
         cardSet = CardCreator.I.GetSetOfCardType(cType);
         cardSprite = cardSet.symbolSprite;
-        cardValuestring = CardCreator.I.GetTextOfCardValue(cValue);
+        cardValuestring = CardCreator.I.GetCharOfCardValue(cValue);
 
         cardTypeSymbol1.sprite = cardSprite;
         cardTypeSymbol2.sprite = cardSprite;
