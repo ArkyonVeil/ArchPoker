@@ -231,7 +231,7 @@ public class PokerCharacterObject : MonoBehaviour
 
         //Highcard
         HandTier = 1;
-        KickerValue = cards[cards.Count].cardValue;
+        KickerValue = cards[cards.Count-1].cardValue;
 
         //Pair
         float PrevValue = 0;

@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
-
+using System.Linq;
 public class GameManager : MonoBehaviour
 {
     public static GameManager I;
@@ -34,6 +34,7 @@ public class GameManager : MonoBehaviour
     int moneyInPot = 0;
 
     bool isGameLive = false;
+    int endgamePhase = -1;
 
     public enum GameProgress
     {
@@ -61,6 +62,12 @@ public class GameManager : MonoBehaviour
         beatTimeWait = 2;
 
         MoneyInPot = 0;
+
+        Players[0].CharacterName = "Encompasse";
+        Players[1].CharacterName = "Joe Mc.Row";
+        Players[2].CharacterName = "SmalBot";
+        Players[3].CharacterName = "All Liar Rhilley";
+        Players[4].CharacterName = "Face Mc.Poker";
     }
 
     public void Update()
@@ -104,14 +111,31 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        if (endgamePhase >= 0)
+        {
+            
+            RoundEndPhase(endgamePhase);
+            return;
+        }
+
 
         if (Players[currentPlayerTurn].playerState == PlayerState.Folded
-            || Players[currentPlayerTurn].playerState == PlayerState.Dead
-            || Players[currentPlayerTurn].playerState == PlayerState.AllIn)
+            || Players[currentPlayerTurn].playerState == PlayerState.Dead)
         {
             currentPlayerTurn++;
             return;
         }
+        if (Players[currentPlayerTurn].playerState == PlayerState.AllIn && gameProgress != GameProgress.River)
+        {
+            if (GetNumPlayersThatNeedAct() == 0)
+            {
+                NextPhase();
+                return;
+            }
+            currentPlayerTurn++;
+            return;
+        }
+        
 
         PlayerAction playerAction = Players[currentPlayerTurn].GetPlayerAction();
 
@@ -125,6 +149,10 @@ public class GameManager : MonoBehaviour
                 //Human is not yet done playing.
                 return;
             case PlayerAction.Fold:
+                if (GetNumPlayersOutofRound() == Players.Length - 1)
+                {
+                    DefaultWin();
+                }
                 currentPlayerTurn++;
                 return;
             case PlayerAction.Check:
@@ -210,9 +238,10 @@ public class GameManager : MonoBehaviour
     {
         for (int i = 0; i < Players.Length; i++)
         {
-            if (Players[i].playerState != PlayerState.Folded || Players[i].playerState != PlayerState.Dead || Players[i].playerState != PlayerState.AllIn)
+            if (Players[i].playerState != PlayerState.Folded && Players[i].playerState != PlayerState.Dead && Players[i].playerState != PlayerState.AllIn)
             {
                 Players[i].playerState = PlayerState.Waiting;
+                PrevBet = 0;
             }
         }
         switch (gameProgress)
@@ -250,14 +279,98 @@ public class GameManager : MonoBehaviour
             if (Players[i].playerState != PlayerState.Dead || Players[i].playerState != PlayerState.Folded)
             {
                 TransferMoney(false, MoneyInPot, Players[i]);
-                StartNewRound();
+                secondsTimeWait = 1;
+                endgamePhase = 0;
             }
         }
     }
 
     void Showdown()
     {
+        PlayerRank[] pRank = new PlayerRank[Players.Length];
+        for (int i = 0; i < Players.Length; i++)
+        {
+            if (Players[i].playerState == PlayerState.Dead && Players[i].playerState == PlayerState.Folded)
+            {
+                continue;
+            }
+            Players[i].GetHandFinalValue();
+            pRank[i] = new PlayerRank() { playerIndex = i, handTier = Players[i].HandTier, KickerValue = Players[i].KickerValue };
+        }       
+        pRank.OrderBy(x => x.handTier);
+        Debug.Log("Victory table: ");
+        for (int i = 0; i < pRank.Length; i++)
+        {
+            Debug.Log(Players[pRank[i].playerIndex].CharacterName + " - Score: " + Players[pRank[i].playerIndex].HandTier);
+        }
+        //Yay that person wins.
+        TransferMoney(false, moneyInPot, Players[pRank[0].playerIndex]);
+        endgamePhase = 0;
+    }
 
+    void RoundEndPhase(int phase)
+    {
+        secondsTimeWait = 1f;
+        switch (phase)
+        {
+            case 0:
+                for (int i = 0; i < Players.Length; i++)
+                {
+                    if (Players[i].hand.cards.Count > 0)
+                    {
+                        TransferCards(Players[i].hand, dealerDeck, 2, true);
+                    }
+                    if (Players[i].playerState != PlayerState.Dead)
+                        Players[i].playerState = PlayerState.Waiting;
+                }
+                TransferCards(communityHand, dealerDeck, communityHand.cards.Count, true);
+                endgamePhase++;
+                break;
+            case 1:
+                for (int i = 0; i < Players.Length; i++)
+                {
+                    if (Players[i].Money==0 && Players[i].playerState != PlayerState.Dead)
+                    {
+                        KillPlayer(i);
+                        secondsTimeWait = 1;
+                        return;
+                        
+                    }
+                }
+                endgamePhase++;
+                break;
+            case 2:
+                endgamePhase++;
+                break;
+            case 3:
+                dealerDeck.ShuffleHand();
+                endgamePhase++;
+                break;
+            case 4:
+                StartNewRound();
+                endgamePhase = -1;
+                break;
+            default:
+                break;
+        }
+        
+    }
+
+    void KillPlayer(int PlayerID)
+    {
+        Players[PlayerID].playerState = PlayerState.Dead;
+        Players[PlayerID].characterImage.enabled = false;
+        //Out animation.
+    }
+        
+    
+
+    struct PlayerRank
+    {
+        public int playerIndex;
+        public int handTier;
+        public float KickerValue;
+        
     }
 
     /// <summary>
@@ -277,12 +390,18 @@ public class GameManager : MonoBehaviour
 
     public void StartNewRound()
     {
+        //Blind standin, forces betting.
+        Debug.Log("Start new round");
+        PrevBet = 10;
+        gameProgress = GameProgress.Preflop;
         for (int i = 0; i < Players.Length; i++)
         {
             if (Players[i].playerState != PlayerState.Dead)
-            {
+            {              
+                CurrentPhaseText.text = "Betting Round";
                 Players[i].playerState = PlayerState.Waiting;
                 TransferCards(dealerDeck, Players[i].hand, 2);
+                
             }
         };
         secondsTimeWait += 2;
@@ -334,12 +453,6 @@ public class GameManager : MonoBehaviour
             player.Money += Amount;
         }
     }
-
-    public void DetermineWinner()
-    {
-
-    }
-
 
     /// <summary>
     /// Folded, or dead.
